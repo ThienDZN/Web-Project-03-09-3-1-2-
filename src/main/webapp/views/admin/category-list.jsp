@@ -18,7 +18,9 @@
         <div class="theme-nav-links">
             <a class="btn btn-secondary" href="<c:url value='/home'/>">Home</a>
             <a class="btn btn-secondary" href="<c:url value='/admin/products'/>">Catalog</a>
+            <a class="btn btn-secondary" href="<c:url value='/profile'/>">Profile</a>
             <a class="btn btn-primary" href="<c:url value='/admin/category/add'/>">Add Category</a>
+            <a class="btn btn-secondary" href="<c:url value='/logout'/>">Logout</a>
         </div>
     </div>
 

@@ -33,7 +33,7 @@
             <a class="btn btn-secondary" href="<c:url value='/register'/>">Create Account</a>
             <a class="btn btn-secondary" href="<c:url value='/forgot-password'/>">Forgot Password</a>
         </div>
-        <p class="inline-note">Demo admin: <strong>admin</strong> / <strong>Admin@123</strong></p>
+        <p class="inline-note">Demo profile user: <strong>user123</strong> / <strong>User123@Aa1</strong></p>
     </div>
 </div>
 </body>

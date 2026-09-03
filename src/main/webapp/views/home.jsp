@@ -23,6 +23,7 @@
             </c:if>
             <c:choose>
                 <c:when test="${sessionScope.currentUser != null}">
+                    <a class="btn btn-secondary" href="<c:url value='/profile'/>">Profile</a>
                     <span class="inline-note">Hello, ${sessionScope.currentUser.fullName}</span>
                     <a class="btn btn-primary" href="<c:url value='/logout'/>">Logout</a>
                 </c:when>

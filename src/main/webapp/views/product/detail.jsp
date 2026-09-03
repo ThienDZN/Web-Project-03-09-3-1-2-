@@ -18,6 +18,19 @@
         <div class="theme-nav-links">
             <a class="btn btn-secondary" href="<c:url value='/home'/>">Home</a>
             <a class="btn btn-primary" href="<c:url value='/product'/>">Back to List</a>
+            <c:if test="${sessionScope.currentUser != null and sessionScope.currentUser.roleName == 'ADMIN'}">
+                <a class="btn btn-secondary" href="<c:url value='/admin/products'/>">Admin</a>
+            </c:if>
+            <c:choose>
+                <c:when test="${sessionScope.currentUser != null}">
+                    <a class="btn btn-secondary" href="<c:url value='/profile'/>">Profile</a>
+                    <a class="btn btn-secondary" href="<c:url value='/logout'/>">Logout</a>
+                </c:when>
+                <c:otherwise>
+                    <a class="btn btn-secondary" href="<c:url value='/login'/>">Login</a>
+                    <a class="btn btn-secondary" href="<c:url value='/register'/>">Register</a>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
 

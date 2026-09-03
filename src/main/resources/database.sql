@@ -67,6 +67,18 @@ BEGIN
 END
 GO
 
+IF COL_LENGTH(N'dbo.users', N'Phone') IS NULL
+BEGIN
+    ALTER TABLE dbo.users ADD Phone VARCHAR(20) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.users', N'Images') IS NULL
+BEGIN
+    ALTER TABLE dbo.users ADD Images NVARCHAR(500) NULL;
+END
+GO
+
 IF COL_LENGTH(N'dbo.users', N'RoleName') IS NULL
 BEGIN
     ALTER TABLE dbo.users ADD RoleName VARCHAR(20) NOT NULL CONSTRAINT DF_users_RoleName DEFAULT 'USER';

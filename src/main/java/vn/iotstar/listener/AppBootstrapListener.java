@@ -21,6 +21,9 @@ import vn.iotstar.entity.UserAccount;
 @WebListener
 public class AppBootstrapListener implements ServletContextListener {
     private static final int DEMO_TRACK_COUNT = 12;
+    private static final String PROFILE_DEMO_USERNAME = "user123";
+    private static final String PROFILE_DEMO_EMAIL = "user123@example.com";
+    private static final String PROFILE_DEMO_PASSWORD = "User123@Aa1";
 
     private static final Set<String> TARGET_TRACK_TITLES = Set.of(
             "Khóc Đấy (Album Version)",
@@ -84,6 +87,7 @@ public class AppBootstrapListener implements ServletContextListener {
                 entityManager.persist(admin);
             }
 
+            ensureProfileDemoUser(entityManager);
             Map<String, Category> categories = ensureCategories(entityManager);
             syncDemoCatalog(entityManager, categories);
 
@@ -96,6 +100,40 @@ public class AppBootstrapListener implements ServletContextListener {
         } finally {
             entityManager.close();
         }
+    }
+
+    private void ensureProfileDemoUser(EntityManager entityManager) {
+        List<UserAccount> matches = entityManager.createQuery(
+                        "SELECT u FROM UserAccount u WHERE LOWER(u.username) = :username",
+                        UserAccount.class)
+                .setParameter("username", PROFILE_DEMO_USERNAME.toLowerCase())
+                .setMaxResults(1)
+                .getResultList();
+
+        UserAccount profileUser = matches.isEmpty() ? null : matches.get(0);
+        if (profileUser == null) {
+            profileUser = new UserAccount();
+            profileUser.setFullName("User 123");
+            profileUser.setUsername(PROFILE_DEMO_USERNAME);
+            profileUser.setEmail(PROFILE_DEMO_EMAIL);
+            profileUser.setRoleName("USER");
+            profileUser.setEnabled(true);
+            profileUser.setStatus(1);
+            profileUser.setPasswordHash(PasswordUtils.encode(PROFILE_DEMO_PASSWORD));
+            entityManager.persist(profileUser);
+            return;
+        }
+
+        if (profileUser.getFullName() == null || profileUser.getFullName().isBlank()) {
+            profileUser.setFullName("User 123");
+        }
+        if (profileUser.getEmail() == null || profileUser.getEmail().isBlank()) {
+            profileUser.setEmail(PROFILE_DEMO_EMAIL);
+        }
+        profileUser.setRoleName("USER");
+        profileUser.setEnabled(true);
+        profileUser.setStatus(1);
+        profileUser.setPasswordHash(PasswordUtils.encode(PROFILE_DEMO_PASSWORD));
     }
 
     private Map<String, Category> ensureCategories(EntityManager entityManager) {

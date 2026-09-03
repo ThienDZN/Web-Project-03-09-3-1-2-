@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>vn.iotstar</groupId>
-    <artifactId>assignment02-otp-productshop</artifactId>
+    <artifactId>assignment03-user-profile</artifactId>
     <version>1.0.0</version>
     <packaging>war</packaging>
 
-    <name>Assignment 02 OTP Product Shop</name>
-    <description>Jakarta Servlet/JSP assignment with OTP email authentication and product management</description>
+    <name>Assignment 03 User Profile</name>
+    <description>Jakarta Servlet/JSP assignment copy focused on user profile update with JPA and multipart upload</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -97,7 +97,7 @@
     </dependencies>
 
     <build>
-        <finalName>assignment02-otp-productshop</finalName>
+        <finalName>assignment03-user-profile</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

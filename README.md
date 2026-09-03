@@ -1,20 +1,14 @@
-# Assignment 02 OTP Product Shop
+# Assignment 03 User Profile
 
-Project Jakarta Servlet/JSP cho bài tập 02, bổ sung xác thực tài khoản bằng OTP qua email và quản lý sản phẩm.
+Project Jakarta Servlet/JSP duoc tao bang cach copy tu Assignment 02 de lam bai 03, tap trung vao chuc nang cap nhat profile user bang JPA va multipart upload.
 
-## Mục tiêu bài tập
+## Muc tieu bai tap hien tai
 
-1. Kích hoạt tài khoản bằng OTP gửi qua email khi đăng ký.
-2. Thực hiện chức năng đăng nhập, đăng xuất.
-3. Hỗ trợ quên mật khẩu và xác nhận OTP qua email để đặt lại mật khẩu.
-4. Bổ sung bảng `products` với mối liên hệ 1-n với `categories`.
-5. CRUD sản phẩm trong trang quản trị.
-6. Hiển thị 10 sản phẩm mới nhất ở trang chủ.
-7. Hiển thị danh sách sản phẩm có phân trang 6 sản phẩm/trang tại URL `/product`.
-8. Hiển thị chi tiết sản phẩm tại `/product/detail?id=...`.
-9. Hỗ trợ upload ảnh sản phẩm bằng Multipart.
+1. Giu lai nen tang auth, OTP, category, product cua project goc de dung lam xuat phat diem.
+2. Chi trien khai yeu cau 3: user cap nhat `fullName`, `phone`, `images`.
+3. Tach rieng module profile de sau nay co the tu boc SiteMesh va them validation form ma khong can doi lai logic profile.
 
-## Công nghệ
+## Cong nghe
 
 - Java 17
 - Maven WAR
@@ -23,40 +17,30 @@ Project Jakarta Servlet/JSP cho bài tập 02, bổ sung xác thực tài khoả
 - SQL Server
 - Jakarta Mail
 - BCrypt
+- Multipart file upload
 
-## Chức năng đã có
+## Chuc nang dang co
 
-### Xác thực và OTP
+- Dang ky tai khoan voi OTP email.
+- Dang nhap, dang xuat, quen mat khau, dat lai mat khau bang OTP.
+- CRUD category va product tu project goc.
+- Public catalog, chi tiet san pham, upload anh cho category va product.
+- User profile update tai `/profile` voi `fullName`, `phone`, `images`.
 
-- Đăng ký tài khoản với `fullName`, `username`, `email`, `password`.
-- Gửi OTP kích hoạt tài khoản qua email.
-- Xác thực OTP để mở khóa tài khoản mới.
-- Đăng nhập bằng username hoặc email.
-- Đăng xuất khỏi hệ thống.
-- Gửi OTP quên mật khẩu qua email.
-- Xác thực OTP quên mật khẩu và đặt lại mật khẩu mới.
+## Pham vi da lam cho bai 03
 
-### Product Shop
+- Them route `/profile` rieng biet voi auth va admin.
+- Them service profile rieng de cap nhat thong tin nguoi dung.
+- Them cac cot `Phone`, `Images` cho bang `users`.
+- Ho tro upload avatar bang multipart va luu bang JPA.
+- Lam moi `currentUser` trong session sau khi update profile.
 
-- Trang chủ `/home` hiển thị 10 sản phẩm mới nhất.
-- Trang `/product` hiển thị danh sách sản phẩm có phân trang.
-- Trang `/product/detail` hiển thị thông tin chi tiết sản phẩm.
-- Trang admin `/admin/products` cho phép thêm, sửa, xóa sản phẩm.
-- Hỗ trợ upload ảnh sản phẩm từ máy tính hoặc dùng link ảnh.
+## Pham vi chua lam
 
-## Cấu trúc chính
+- Chua cau hinh SiteMesh Decorator 3.
+- Chua bo sung validation cho cac form theo yeu cau bai 03.
 
-- `src/main/java/vn/iotstar/controller`: servlet cho auth, home, product.
-- `src/main/java/vn/iotstar/controller/admin`: CRUD sản phẩm trong trang admin.
-- `src/main/java/vn/iotstar/entity`: `UserAccount`, `OtpVerification`, `Product`, `Category`.
-- `src/main/java/vn/iotstar/service`: xử lý auth, OTP, product, category.
-- `src/main/resources/database.sql`: script tạo và cập nhật bảng dữ liệu.
-- `src/main/resources/application.properties`: cấu hình upload, mail, phân trang.
-- `src/main/webapp/views/auth`: giao diện login/register/verify OTP/forgot password.
-- `src/main/webapp/views/product`: giao diện danh sách và chi tiết sản phẩm.
-- `src/main/webapp/views/admin`: giao diện quản trị category và product.
-
-## Route chính
+## Route chinh
 
 - `/register`
 - `/verify-otp`
@@ -65,49 +49,33 @@ Project Jakarta Servlet/JSP cho bài tập 02, bổ sung xác thực tài khoả
 - `/logout`
 - `/forgot-password`
 - `/reset-password`
+- `/profile`
 - `/home`
 - `/product`
 - `/product/detail?id=...`
 - `/admin/products`
 
-## Cơ sở dữ liệu
+## Co so du lieu
 
-Project sử dụng các bảng chính:
+Project su dung cac bang chinh:
 
 - `users`
 - `otp_verifications`
 - `categories`
 - `products`
 
-Script tạo bảng nằm trong file `src/main/resources/database.sql`.
+Script tao va nang cap bang nam trong file `src/main/resources/database.sql`.
+Database hien dang tro ve `HelloCoAiKhongDB` de dung chung moi truong SQL Server san co cua project goc.
 
-## Cấu hình mail
+## Cau hinh upload
 
-Mặc định file `src/main/resources/application.properties` đang để:
-
-```properties
-app.mail.mock=true
-```
-
-Chế độ này không gửi email thật. OTP sẽ được trả về trong thông báo hoặc in ra console để test nhanh.
-
-Nếu muốn gửi email thật, sửa:
+Upload dir mac dinh:
 
 ```properties
-app.mail.mock=false
-app.mail.host=...
-app.mail.port=587
-app.mail.username=...
-app.mail.password=...
-app.mail.from=...
-app.mail.auth=true
-app.mail.starttls=true
-app.mail.ssl=false
+app.upload.dir=/home/thien/uploads/assignment03-user-profile
 ```
 
-## Chạy project
-
-Build project:
+## Build project
 
 ```bash
 mvn clean package
@@ -116,26 +84,19 @@ mvn clean package
 WAR sau khi build:
 
 ```text
-target/assignment02-otp-productshop.war
+target/assignment03-user-profile.war
 ```
 
-Deploy lên Tomcat, sau đó truy cập:
+## URL deploy mau
 
-- `http://localhost:8080/assignment02-otp-productshop/home`
-- `http://localhost:8080/assignment02-otp-productshop/product`
-- `http://localhost:8080/assignment02-otp-productshop/login`
-- `http://localhost:8080/assignment02-otp-productshop/admin/products`
+- `http://localhost:8080/assignment03-user-profile/home`
+- `http://localhost:8080/assignment03-user-profile/product`
+- `http://localhost:8080/assignment03-user-profile/login`
+- `http://localhost:8080/assignment03-user-profile/profile`
+- `http://localhost:8080/assignment03-user-profile/admin/products`
 
-## Tài khoản seed mặc định
-
-Project có seed sẵn tài khoản admin:
+## Tai khoan seed mac dinh
 
 - Username: `admin`
 - Email: `admin@example.com`
 - Password: `Admin@123`
-
-## Ghi chú
-
-- `app.product.page-size=6` quy định số sản phẩm mỗi trang.
-- Thư mục upload mặc định được cấu hình bởi `app.upload.dir`.
-- Tên display name của web app là `Assignment 02 OTP Product Shop`.

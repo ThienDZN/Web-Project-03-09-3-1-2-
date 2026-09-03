@@ -35,6 +35,12 @@ public class UserAccount implements Serializable {
     @Column(name = "PasswordHash", length = 255, nullable = false)
     private String passwordHash;
 
+    @Column(name = "Phone", length = 20)
+    private String phone;
+
+    @Column(name = "Images", columnDefinition = "nvarchar(500)")
+    private String images;
+
     @Column(name = "RoleName", length = 20, nullable = false)
     private String roleName;
 
@@ -92,6 +98,22 @@ public class UserAccount implements Serializable {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getImages() {
+        return images;
+    }
+
+    public void setImages(String images) {
+        this.images = images;
     }
 
     public String getRoleName() {

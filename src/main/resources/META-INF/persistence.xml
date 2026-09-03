@@ -19,7 +19,7 @@
                       value="jdbc:sqlserver://localhost:1433;encrypt=true;trustServerCertificate=true;databaseName=HelloCoAiKhongDB"/>
             <property name="jakarta.persistence.jdbc.user" value="user123"/>
             <property name="jakarta.persistence.jdbc.password" value="User123@Aa1"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect"/>
