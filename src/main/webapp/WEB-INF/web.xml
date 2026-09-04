@@ -4,6 +4,31 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
     <display-name>Assignment 03 User Profile</display-name>
+
+    <filter>
+        <filter-name>Utf8EncodingFilter</filter-name>
+        <filter-class>vn.iotstar.filter.Utf8EncodingFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Utf8EncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+
+    <filter>
+        <filter-name>SiteMeshFilter</filter-name>
+        <filter-class>org.sitemesh.config.ConfigurableSiteMeshFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>SiteMeshFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>FORWARD</dispatcher>
+    </filter-mapping>
+
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>

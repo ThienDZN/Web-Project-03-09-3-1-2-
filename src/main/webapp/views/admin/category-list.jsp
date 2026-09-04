@@ -35,9 +35,12 @@
         </div>
 
         <form action="<c:url value='/admin/categories'/>" method="get" class="search-row">
-            <input class="form-input" type="text" name="keyword" value="${keyword}" placeholder="Search by category name">
+            <input class="form-input${not empty errors.keyword ? ' is-invalid' : ''}" type="text" name="keyword" value="<c:out value='${keyword}'/>" placeholder="Search by category name">
             <button class="btn btn-primary" type="submit">Search</button>
             <a class="btn btn-secondary" href="<c:url value='/admin/categories'/>">Reset</a>
+            <c:if test="${not empty errors.keyword}">
+                <div class="invalid-feedback d-block">${errors.keyword}</div>
+            </c:if>
         </form>
 
         <c:choose>

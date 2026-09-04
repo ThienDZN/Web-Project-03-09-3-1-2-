@@ -15,14 +15,22 @@
         <h1>Update Category</h1>
         <c:if test="${not empty error}"><div class="error-box">${error}</div></c:if>
         <form action="<c:url value='/admin/category/update'/>" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="categoryid" value="${cate.categoryid}">
+            <input type="hidden" name="categoryid" value="<c:out value='${cate.categoryid}'/>">
             <div class="form-group">
                 <label>Category Name</label>
-                <input class="form-input" type="text" name="categoryname" value="${cate.categoryname}" placeholder="Enter category name">
+                <input class="form-input${not empty errors.categoryname ? ' is-invalid' : ''}" type="text" name="categoryname"
+                       value="<c:out value='${not empty formData.categoryname ? formData.categoryname : cate.categoryname}'/>" placeholder="Enter category name">
+                <c:if test="${not empty errors.categoryname}">
+                    <div class="invalid-feedback d-block">${errors.categoryname}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Image URL</label>
-                <input class="form-input" type="text" name="images" value="${cate.images}" placeholder="https://...">
+                <input class="form-input${not empty errors.images ? ' is-invalid' : ''}" type="text" name="images"
+                       value="<c:out value='${not empty formData.images ? formData.images : cate.images}'/>" placeholder="https://...">
+                <c:if test="${not empty errors.images}">
+                    <div class="invalid-feedback d-block">${errors.images}</div>
+                </c:if>
             </div>
             <c:choose>
                 <c:when test="${empty cate.images}"><img class="preview-image" src="<c:url value='/assets/no-image.svg'/>" alt="No image"></c:when>
@@ -31,14 +39,20 @@
             </c:choose>
             <div class="form-group">
                 <label>Upload New Image</label>
-                <input class="form-file" type="file" name="images1" accept="image/*">
+                <input class="form-file${not empty errors.images1 ? ' is-invalid' : ''}" type="file" name="images1" accept="image/*">
+                <c:if test="${not empty errors.images1}">
+                    <div class="invalid-feedback d-block">${errors.images1}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Status</label>
                 <div class="radio-row">
-                    <label><input type="radio" name="status" value="1" ${cate.status == 1 ? 'checked' : ''}> Visible</label>
-                    <label><input type="radio" name="status" value="0" ${cate.status != 1 ? 'checked' : ''}> Locked</label>
+                    <label><input type="radio" name="status" value="1" ${not empty formData.status ? (formData.status == '1' ? 'checked' : '') : (cate.status == 1 ? 'checked' : '')}> Visible</label>
+                    <label><input type="radio" name="status" value="0" ${not empty formData.status ? (formData.status == '0' ? 'checked' : '') : (cate.status != 1 ? 'checked' : '')}> Locked</label>
                 </div>
+                <c:if test="${not empty errors.status}">
+                    <div class="invalid-feedback d-block">${errors.status}</div>
+                </c:if>
             </div>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit">Update Category</button>

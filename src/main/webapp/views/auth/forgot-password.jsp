@@ -18,7 +18,11 @@
         <form method="post" action="<c:url value='/forgot-password'/>">
             <div class="form-group">
                 <label>Registered Email</label>
-                <input class="form-input" type="email" name="email" value="${param.email}" placeholder="email@example.com">
+                <input class="form-input${not empty errors.email ? ' is-invalid' : ''}" type="email" name="email"
+                       value="<c:out value='${not empty formData.email ? formData.email : param.email}'/>" placeholder="email@example.com">
+                <c:if test="${not empty errors.email}">
+                    <div class="invalid-feedback d-block">${errors.email}</div>
+                </c:if>
             </div>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit">Send Reset OTP</button>

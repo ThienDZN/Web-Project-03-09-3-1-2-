@@ -244,6 +244,13 @@ body.theme-music {
 .form-input::placeholder, .form-textarea::placeholder {
     color: rgba(255,248,255,0.72);
 }
+.form-input.is-invalid,
+.form-textarea.is-invalid,
+.form-select.is-invalid,
+.form-file.is-invalid {
+    border-color: #ffb3cf;
+    box-shadow: 0 0 0 0.2rem rgba(255, 179, 207, 0.18);
+}
 .form-select option {
     color: #2c114a;
 }
@@ -382,6 +389,11 @@ body.theme-music {
     margin-top: 8px;
     color: var(--soft);
     font-size: 14px;
+}
+.invalid-feedback {
+    color: #ffe2ef;
+    font-size: 14px;
+    margin-top: 8px;
 }
 @media (max-width: 900px) {
     .hero-grid, .detail-grid, .profile-layout { grid-template-columns: 1fr; }

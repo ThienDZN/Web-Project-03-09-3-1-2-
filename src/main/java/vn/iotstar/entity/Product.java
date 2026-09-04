@@ -27,10 +27,10 @@ public class Product implements Serializable {
     @Column(name = "ProductId")
     private Long productId;
 
-    @Column(name = "ProductName", columnDefinition = "nvarchar(150) not null")
+    @Column(name = "ProductName", length = 150, nullable = false)
     private String productName;
 
-    @Column(name = "Description", columnDefinition = "nvarchar(2000) null")
+    @Column(name = "Description", length = 2000)
     private String description;
 
     @Column(name = "Price", nullable = false, precision = 18, scale = 2)
@@ -39,7 +39,7 @@ public class Product implements Serializable {
     @Column(name = "Quantity", nullable = false)
     private int quantity;
 
-    @Column(name = "Image", columnDefinition = "nvarchar(500) null")
+    @Column(name = "Image", length = 500)
     private String image;
 
     @Column(name = "Status", nullable = false)

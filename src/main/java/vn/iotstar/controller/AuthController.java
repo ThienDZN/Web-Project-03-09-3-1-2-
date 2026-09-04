@@ -3,6 +3,8 @@ package vn.iotstar.controller;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,6 +17,8 @@ import vn.iotstar.config.SessionConstants;
 import vn.iotstar.entity.UserAccount;
 import vn.iotstar.service.IAuthService;
 import vn.iotstar.service.impl.AuthServiceImpl;
+import vn.iotstar.validation.ValidationErrors;
+import vn.iotstar.validation.ValidationUtils;
 
 @WebServlet(urlPatterns = {
         "/login",
@@ -41,21 +45,21 @@ public class AuthController extends HttpServlet {
             return;
         }
         if ("/login".equals(servletPath)) {
-            req.getRequestDispatcher("/views/auth/login.jsp").forward(req, resp);
+            forwardLoginView(req, resp);
             return;
         }
         if ("/register".equals(servletPath)) {
-            req.getRequestDispatcher("/views/auth/register.jsp").forward(req, resp);
+            forwardRegisterView(req, resp);
             return;
         }
         if ("/verify-otp".equals(servletPath)) {
             req.setAttribute("purpose", valueOrDefault(req.getParameter("purpose"), OtpPurpose.REGISTER));
             req.setAttribute("email", valueOrDefault(req.getParameter("email"), ""));
-            req.getRequestDispatcher("/views/auth/verify-otp.jsp").forward(req, resp);
+            forwardVerifyOtpView(req, resp);
             return;
         }
         if ("/forgot-password".equals(servletPath)) {
-            req.getRequestDispatcher("/views/auth/forgot-password.jsp").forward(req, resp);
+            forwardForgotPasswordView(req, resp);
             return;
         }
         if ("/reset-password".equals(servletPath)) {
@@ -67,7 +71,7 @@ public class AuthController extends HttpServlet {
                 return;
             }
             req.setAttribute("email", email);
-            req.getRequestDispatcher("/views/auth/reset-password.jsp").forward(req, resp);
+            forwardResetPasswordView(req, resp);
             return;
         }
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -102,14 +106,22 @@ public class AuthController extends HttpServlet {
                 return;
             }
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             req.setAttribute("error", e.getMessage());
-            doGet(req, resp);
+            forwardFormView(req, resp, servletPath);
         }
     }
 
-    private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        UserAccount user = authService.login(req.getParameter("usernameOrEmail"), req.getParameter("password"));
+    private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateLogin(req, formData);
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardLoginView(req, resp);
+            return;
+        }
+
+        UserAccount user = authService.login(formData.get("usernameOrEmail"), req.getParameter("password"));
         req.getSession(true).setAttribute(SessionConstants.CURRENT_USER, user);
         if ("ADMIN".equalsIgnoreCase(user.getRoleName())) {
             resp.sendRedirect(req.getContextPath() + "/admin/products?message=" + encode("Admin login successful."));
@@ -118,25 +130,43 @@ public class AuthController extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/home?message=" + encode("Login successful."));
     }
 
-    private void handleRegister(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    private void handleRegister(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateRegister(req, formData);
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardRegisterView(req, resp);
+            return;
+        }
+
         String deliveryMessage = authService.register(
-                req.getParameter("fullName"),
-                req.getParameter("username"),
-                req.getParameter("email"),
+                formData.get("fullName"),
+                formData.get("username"),
+                formData.get("email"),
                 req.getParameter("password"),
                 req.getParameter("confirmPassword"));
         resp.sendRedirect(req.getContextPath() + "/verify-otp?purpose=" + OtpPurpose.REGISTER
-                + "&email=" + encode(req.getParameter("email"))
+                + "&email=" + encode(formData.get("email"))
                 + "&message=" + encode(deliveryMessage));
     }
 
-    private void handleVerifyOtp(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    private void handleVerifyOtp(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String purpose = valueOrDefault(req.getParameter("purpose"), OtpPurpose.REGISTER);
-        String email = req.getParameter("email");
-        String otp = req.getParameter("otp");
+        String email = ValidationUtils.normalizeEmail(req.getParameter("email"));
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateOtp(req, purpose, email, formData);
+        req.setAttribute("purpose", purpose);
+        req.setAttribute("email", ValidationUtils.emptyIfNull(email));
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardVerifyOtpView(req, resp);
+            return;
+        }
+
+        String otp = formData.get("otp");
         if (OtpPurpose.RESET_PASSWORD.equalsIgnoreCase(purpose)) {
             authService.verifyResetPasswordOtp(email, otp);
-            req.getSession(true).setAttribute(SessionConstants.RESET_PASSWORD_EMAIL, email.trim().toLowerCase());
+            req.getSession(true).setAttribute(SessionConstants.RESET_PASSWORD_EMAIL, email);
             resp.sendRedirect(req.getContextPath() + "/reset-password?email=" + encode(email));
             return;
         }
@@ -144,15 +174,38 @@ public class AuthController extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/login?message=" + encode("Your account has been activated. You can log in now."));
     }
 
-    private void handleForgotPassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String deliveryMessage = authService.sendResetPasswordOtp(req.getParameter("email"));
+    private void handleForgotPassword(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateEmailOnly(req, formData, "email", "Please enter your email address.");
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardForgotPasswordView(req, resp);
+            return;
+        }
+
+        String deliveryMessage = authService.sendResetPasswordOtp(formData.get("email"));
         resp.sendRedirect(req.getContextPath() + "/verify-otp?purpose=" + OtpPurpose.RESET_PASSWORD
-                + "&email=" + encode(req.getParameter("email"))
+                + "&email=" + encode(formData.get("email"))
                 + "&message=" + encode(deliveryMessage));
     }
 
-    private void handleResetPassword(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String email = req.getParameter("email");
+    private void handleResetPassword(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String email = ValidationUtils.normalizeEmail(req.getParameter("email"));
+        req.setAttribute("email", ValidationUtils.emptyIfNull(email));
+        if (!ValidationUtils.isValidEmail(email)) {
+            req.setAttribute("error", "Reset request is not valid.");
+            forwardResetPasswordView(req, resp);
+            return;
+        }
+
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validatePasswordReset(req, formData);
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardResetPasswordView(req, resp);
+            return;
+        }
+
         authService.resetPassword(email, req.getParameter("password"), req.getParameter("confirmPassword"));
         HttpSession session = req.getSession(false);
         if (session != null) {
@@ -161,12 +214,189 @@ public class AuthController extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/login?message=" + encode("Password updated successfully. Please log in again."));
     }
 
-    private void handleResendOtp(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String email = req.getParameter("email");
-        String deliveryMessage = authService.resendRegistrationOtp(email);
+    private void handleResendOtp(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateEmailOnly(req, formData, "email", "Please enter your email address.");
+        req.setAttribute("purpose", OtpPurpose.REGISTER);
+        req.setAttribute("email", ValidationUtils.emptyIfNull(formData.get("email")));
+        bindFormState(req, formData, errors);
+        if (errors.hasErrors()) {
+            forwardVerifyOtpView(req, resp);
+            return;
+        }
+
+        String deliveryMessage = authService.resendRegistrationOtp(formData.get("email"));
         resp.sendRedirect(req.getContextPath() + "/verify-otp?purpose=" + OtpPurpose.REGISTER
-                + "&email=" + encode(email)
+                + "&email=" + encode(formData.get("email"))
                 + "&message=" + encode(deliveryMessage));
+    }
+
+    private ValidationErrors validateLogin(HttpServletRequest req, Map<String, String> formData) {
+        ValidationErrors errors = new ValidationErrors();
+        String usernameOrEmail = ValidationUtils.trimToNull(req.getParameter("usernameOrEmail"));
+        formData.put("usernameOrEmail", ValidationUtils.emptyIfNull(usernameOrEmail));
+        if (usernameOrEmail == null) {
+            errors.add("usernameOrEmail", "Please enter your username or email.");
+        } else if (ValidationUtils.exceedsLength(usernameOrEmail, 120)) {
+            errors.add("usernameOrEmail", "Username or email must not exceed 120 characters.");
+        }
+
+        String password = req.getParameter("password");
+        if (password == null || password.isBlank()) {
+            errors.add("password", "Please enter your password.");
+        }
+        return errors;
+    }
+
+    private ValidationErrors validateRegister(HttpServletRequest req, Map<String, String> formData) {
+        ValidationErrors errors = new ValidationErrors();
+
+        String fullName = ValidationUtils.trimToNull(req.getParameter("fullName"));
+        formData.put("fullName", ValidationUtils.emptyIfNull(fullName));
+        if (fullName == null) {
+            errors.add("fullName", "Please enter your full name.");
+        } else if (ValidationUtils.exceedsLength(fullName, 120)) {
+            errors.add("fullName", "Full name must not exceed 120 characters.");
+        }
+
+        String username = ValidationUtils.trimToNull(req.getParameter("username"));
+        formData.put("username", ValidationUtils.emptyIfNull(username));
+        if (username == null) {
+            errors.add("username", "Please enter a username.");
+        } else if (!ValidationUtils.isValidUsername(username)) {
+            errors.add("username", "Username must be 3-50 characters and only contain letters, numbers, dot, dash, or underscore.");
+        }
+
+        String email = ValidationUtils.normalizeEmail(req.getParameter("email"));
+        formData.put("email", ValidationUtils.emptyIfNull(email));
+        if (email == null) {
+            errors.add("email", "Please enter your email address.");
+        } else if (!ValidationUtils.isValidEmail(email)) {
+            errors.add("email", "Please enter a valid email address.");
+        }
+
+        String password = req.getParameter("password");
+        String confirmPassword = req.getParameter("confirmPassword");
+        if (password == null || password.isBlank()) {
+            errors.add("password", "Please enter a password.");
+        } else if (password.length() < 6) {
+            errors.add("password", "Password must contain at least 6 characters.");
+        }
+
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            errors.add("confirmPassword", "Please confirm your password.");
+        } else if (password != null && !password.equals(confirmPassword)) {
+            errors.add("confirmPassword", "Password confirmation does not match.");
+        }
+        return errors;
+    }
+
+    private ValidationErrors validateOtp(HttpServletRequest req, String purpose, String email, Map<String, String> formData) {
+        ValidationErrors errors = new ValidationErrors();
+        String otp = ValidationUtils.trimToNull(req.getParameter("otp"));
+        formData.put("otp", ValidationUtils.emptyIfNull(otp));
+
+        if (!OtpPurpose.REGISTER.equalsIgnoreCase(purpose) && !OtpPurpose.RESET_PASSWORD.equalsIgnoreCase(purpose)) {
+            errors.add("otp", "Verification request is not valid.");
+        }
+        if (!ValidationUtils.isValidEmail(email)) {
+            errors.add("otp", "Email for OTP verification is not valid.");
+        }
+        if (otp == null) {
+            errors.add("otp", "Please enter the OTP code.");
+        } else if (!ValidationUtils.isValidOtp(otp)) {
+            errors.add("otp", "OTP must contain exactly 6 digits.");
+        }
+        return errors;
+    }
+
+    private ValidationErrors validateEmailOnly(HttpServletRequest req, Map<String, String> formData,
+                                               String fieldName, String emptyMessage) {
+        ValidationErrors errors = new ValidationErrors();
+        String email = ValidationUtils.normalizeEmail(req.getParameter(fieldName));
+        formData.put(fieldName, ValidationUtils.emptyIfNull(email));
+        if (email == null) {
+            errors.add(fieldName, emptyMessage);
+        } else if (!ValidationUtils.isValidEmail(email)) {
+            errors.add(fieldName, "Please enter a valid email address.");
+        }
+        return errors;
+    }
+
+    private ValidationErrors validatePasswordReset(HttpServletRequest req, Map<String, String> formData) {
+        ValidationErrors errors = new ValidationErrors();
+        String password = req.getParameter("password");
+        String confirmPassword = req.getParameter("confirmPassword");
+        if (password == null || password.isBlank()) {
+            errors.add("password", "Please enter a new password.");
+        } else if (password.length() < 6) {
+            errors.add("password", "Password must contain at least 6 characters.");
+        }
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            errors.add("confirmPassword", "Please confirm the new password.");
+        } else if (password != null && !password.equals(confirmPassword)) {
+            errors.add("confirmPassword", "Password confirmation does not match.");
+        }
+        return errors;
+    }
+
+    private void bindFormState(HttpServletRequest req, Map<String, String> formData, ValidationErrors errors) {
+        req.setAttribute("formData", formData);
+        req.setAttribute("errors", errors.asMap());
+    }
+
+    private void forwardFormView(HttpServletRequest req, HttpServletResponse resp, String servletPath)
+            throws ServletException, IOException {
+        if ("/login".equals(servletPath)) {
+            forwardLoginView(req, resp);
+            return;
+        }
+        if ("/register".equals(servletPath)) {
+            forwardRegisterView(req, resp);
+            return;
+        }
+        if ("/verify-otp".equals(servletPath) || "/resend-otp".equals(servletPath)) {
+            forwardVerifyOtpView(req, resp);
+            return;
+        }
+        if ("/forgot-password".equals(servletPath)) {
+            forwardForgotPasswordView(req, resp);
+            return;
+        }
+        if ("/reset-password".equals(servletPath)) {
+            forwardResetPasswordView(req, resp);
+            return;
+        }
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    private void forwardLoginView(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getRequestDispatcher("/views/auth/login.jsp").forward(req, resp);
+    }
+
+    private void forwardRegisterView(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getRequestDispatcher("/views/auth/register.jsp").forward(req, resp);
+    }
+
+    private void forwardVerifyOtpView(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getAttribute("purpose") == null) {
+            req.setAttribute("purpose", valueOrDefault(req.getParameter("purpose"), OtpPurpose.REGISTER));
+        }
+        if (req.getAttribute("email") == null) {
+            req.setAttribute("email", valueOrDefault(req.getParameter("email"), ""));
+        }
+        req.getRequestDispatcher("/views/auth/verify-otp.jsp").forward(req, resp);
+    }
+
+    private void forwardForgotPasswordView(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.getRequestDispatcher("/views/auth/forgot-password.jsp").forward(req, resp);
+    }
+
+    private void forwardResetPasswordView(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (req.getAttribute("email") == null) {
+            req.setAttribute("email", valueOrDefault(req.getParameter("email"), ""));
+        }
+        req.getRequestDispatcher("/views/auth/reset-password.jsp").forward(req, resp);
     }
 
     private String encode(String value) {

@@ -1,14 +1,12 @@
 package vn.iotstar.controller.admin;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -17,13 +15,15 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
-import vn.iotstar.config.UploadConstants;
 import vn.iotstar.entity.Category;
 import vn.iotstar.entity.Product;
 import vn.iotstar.service.ICategoryService;
 import vn.iotstar.service.IProductService;
 import vn.iotstar.service.impl.CategoryServiceImpl;
 import vn.iotstar.service.impl.ProductServiceImpl;
+import vn.iotstar.util.LocalImageStorage;
+import vn.iotstar.validation.ValidationErrors;
+import vn.iotstar.validation.ValidationUtils;
 
 @MultipartConfig
 @WebServlet(urlPatterns = {
@@ -100,7 +100,24 @@ public class ProductController extends HttpServlet {
     }
 
     private void insertProduct(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Product product = buildProductFromRequest(req, null);
+        Product product = new Product();
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateProductRequest(req, product, formData, null);
+        bindFormState(req, product, formData, errors);
+        if (errors.hasErrors()) {
+            showForm(req, resp, product, "Create Catalog Entry", req.getContextPath() + "/admin/product/insert");
+            return;
+        }
+
+        try {
+            product.setImage(resolveImage(req, null, "product"));
+        } catch (IllegalArgumentException e) {
+            errors.add("imageFile", e.getMessage());
+            req.setAttribute("errors", errors.asMap());
+            showForm(req, resp, product, "Create Catalog Entry", req.getContextPath() + "/admin/product/insert");
+            return;
+        }
+
         try {
             productService.insert(product);
             redirect(resp, req.getContextPath() + "/admin/products", "Catalog entry created successfully.");
@@ -118,14 +135,30 @@ public class ProductController extends HttpServlet {
             return;
         }
 
-        Product product = buildProductFromRequest(req, existing);
-        product.setProductId(existing.getProductId());
+        String previousImage = existing.getImage();
+        Map<String, String> formData = new LinkedHashMap<>();
+        ValidationErrors errors = validateProductRequest(req, existing, formData, previousImage);
+        bindFormState(req, existing, formData, errors);
+        if (errors.hasErrors()) {
+            showForm(req, resp, existing, "Update Catalog Entry", req.getContextPath() + "/admin/product/update");
+            return;
+        }
+
         try {
-            productService.update(product);
+            existing.setImage(resolveImage(req, previousImage, "product"));
+        } catch (IllegalArgumentException e) {
+            errors.add("imageFile", e.getMessage());
+            req.setAttribute("errors", errors.asMap());
+            showForm(req, resp, existing, "Update Catalog Entry", req.getContextPath() + "/admin/product/update");
+            return;
+        }
+
+        try {
+            productService.update(existing);
             redirect(resp, req.getContextPath() + "/admin/products", "Catalog entry updated successfully.");
         } catch (Exception e) {
             req.setAttribute("error", e.getMessage());
-            showForm(req, resp, product, "Update Catalog Entry", req.getContextPath() + "/admin/product/update");
+            showForm(req, resp, existing, "Update Catalog Entry", req.getContextPath() + "/admin/product/update");
         }
     }
 
@@ -134,7 +167,7 @@ public class ProductController extends HttpServlet {
         Product product = productService.findById(id);
         try {
             if (product != null && isLocalImage(product.getImage())) {
-                Files.deleteIfExists(Paths.get(UploadConstants.DIR, product.getImage()));
+                LocalImageStorage.deleteIfExists(product.getImage());
             }
             productService.delete(id);
             redirect(resp, req.getContextPath() + "/admin/products", "Catalog entry deleted successfully.");
@@ -143,53 +176,98 @@ public class ProductController extends HttpServlet {
         }
     }
 
-    private Product buildProductFromRequest(HttpServletRequest req, Product existing)
-            throws IOException, ServletException {
-        Product product = existing == null ? new Product() : existing;
-        product.setProductName(req.getParameter("productName"));
-        product.setDescription(req.getParameter("description"));
-        product.setPrice(parsePrice(req.getParameter("price")));
-        product.setQuantity(parseInt(req.getParameter("quantity")));
-        product.setStatus(parseInt(req.getParameter("status")) == 1 ? 1 : 0);
-        product.setCategory(resolveCategory(req.getParameter("categoryId")));
-        product.setImage(resolveImage(req, existing == null ? null : existing.getImage()));
-        return product;
-    }
+    private ValidationErrors validateProductRequest(HttpServletRequest req, Product product,
+                                                    Map<String, String> formData, String previousImage) {
+        ValidationErrors errors = new ValidationErrors();
 
-    private Category resolveCategory(String rawCategoryId) {
-        Category category = categoryService.findById(parseInt(rawCategoryId));
-        if (category == null) {
-            throw new IllegalArgumentException("Selected category does not exist.");
+        String productName = ValidationUtils.trimToNull(req.getParameter("productName"));
+        formData.put("productName", ValidationUtils.emptyIfNull(productName));
+        if (productName == null) {
+            errors.add("productName", "Please enter the title.");
+        } else if (ValidationUtils.exceedsLength(productName, 150)) {
+            errors.add("productName", "Title must not exceed 150 characters.");
         }
-        return category;
-    }
+        product.setProductName(productName);
 
-    private String resolveImage(HttpServletRequest req, String oldImage) throws IOException, ServletException {
-        String imageLink = normalize(req.getParameter("image"));
-        File uploadDir = new File(UploadConstants.DIR);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
-        }
-        try {
-            Part part = req.getPart("imageFile");
-            if (part != null && part.getSize() > 0) {
-                if (isLocalImage(oldImage)) {
-                    Files.deleteIfExists(Paths.get(UploadConstants.DIR, oldImage));
-                }
-                String originalName = Paths.get(part.getSubmittedFileName()).getFileName().toString();
-                String extension = "";
-                int index = originalName.lastIndexOf('.');
-                if (index >= 0) {
-                    extension = originalName.substring(index);
-                }
-                String savedName = System.currentTimeMillis() + extension;
-                part.write(Paths.get(UploadConstants.DIR, savedName).toString());
-                return savedName;
+        String categoryIdValue = ValidationUtils.trimToNull(req.getParameter("categoryId"));
+        formData.put("categoryId", ValidationUtils.emptyIfNull(categoryIdValue));
+        if (!ValidationUtils.isPositiveInteger(categoryIdValue)) {
+            errors.add("categoryId", "Please choose a valid category.");
+        } else {
+            Category category = categoryService.findById(Integer.parseInt(categoryIdValue));
+            if (category == null) {
+                errors.add("categoryId", "Selected category does not exist.");
+            } else {
+                product.setCategory(category);
             }
-        } catch (FileNotFoundException e) {
-            throw new IOException("Unable to save the uploaded image file.", e);
         }
-        return imageLink != null ? imageLink : normalize(oldImage);
+
+        String priceValue = ValidationUtils.trimToNull(req.getParameter("price"));
+        formData.put("price", ValidationUtils.emptyIfNull(priceValue));
+        if (priceValue == null) {
+            errors.add("price", "Please enter the price.");
+        } else if (!ValidationUtils.isNonNegativeDecimal(priceValue)) {
+            errors.add("price", "Price must be a number greater than or equal to 0.");
+        } else {
+            product.setPrice(new BigDecimal(priceValue));
+        }
+
+        String quantityValue = ValidationUtils.trimToNull(req.getParameter("quantity"));
+        formData.put("quantity", ValidationUtils.emptyIfNull(quantityValue));
+        if (quantityValue == null) {
+            errors.add("quantity", "Please enter the quantity.");
+        } else if (!ValidationUtils.isNonNegativeInteger(quantityValue)) {
+            errors.add("quantity", "Quantity must be an integer greater than or equal to 0.");
+        } else {
+            product.setQuantity(Integer.parseInt(quantityValue));
+        }
+
+        String description = ValidationUtils.trimToNull(req.getParameter("description"));
+        formData.put("description", ValidationUtils.emptyIfNull(description));
+        if (ValidationUtils.exceedsLength(description, 2000)) {
+            errors.add("description", "Description must not exceed 2000 characters.");
+        }
+        product.setDescription(description);
+
+        String imageValue = ValidationUtils.trimToNull(req.getParameter("image"));
+        formData.put("image", ValidationUtils.emptyIfNull(imageValue));
+        if (ValidationUtils.exceedsLength(imageValue, 500)) {
+            errors.add("image", "Image URL must not exceed 500 characters.");
+        } else if (imageValue != null && !isAcceptedImageReference(imageValue, previousImage)) {
+            errors.add("image", "Image URL must start with http:// or https://.");
+        }
+        product.setImage(imageValue == null ? ValidationUtils.trimToNull(previousImage) : imageValue);
+
+        String statusValue = ValidationUtils.trimToNull(req.getParameter("status"));
+        formData.put("status", ValidationUtils.emptyIfNull(statusValue));
+        if (!ValidationUtils.isStatusValue(statusValue)) {
+            errors.add("status", "Please select a valid status.");
+        } else {
+            product.setStatus("1".equals(statusValue) ? 1 : 0);
+        }
+
+        return errors;
+    }
+
+    private void bindFormState(HttpServletRequest req, Product product,
+                               Map<String, String> formData, ValidationErrors errors) {
+        req.setAttribute("product", product);
+        req.setAttribute("formData", formData);
+        req.setAttribute("errors", errors.asMap());
+    }
+
+    private String resolveImage(HttpServletRequest req, String oldImage, String prefix)
+            throws IOException, ServletException {
+        String imageLink = ValidationUtils.trimToNull(req.getParameter("image"));
+        Part part = req.getPart("imageFile");
+        if (LocalImageStorage.hasUpload(part)) {
+            String savedName = LocalImageStorage.storeImage(part, prefix);
+            if (isLocalImage(oldImage)) {
+                LocalImageStorage.deleteIfExists(oldImage);
+            }
+            return savedName;
+        }
+        return imageLink != null ? imageLink : ValidationUtils.trimToNull(oldImage);
     }
 
     private void redirect(HttpServletResponse resp, String baseUrl, String message) throws IOException {
@@ -204,28 +282,9 @@ public class ProductController extends HttpServlet {
         }
     }
 
-    private int parseInt(String raw) {
-        try {
-            return Integer.parseInt(raw);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private BigDecimal parsePrice(String raw) {
-        try {
-            return new BigDecimal(raw);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Price is not valid.");
-        }
-    }
-
-    private String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+    private boolean isAcceptedImageReference(String value, String previousImage) {
+        return ValidationUtils.isValidHttpUrl(value)
+                || (isLocalImage(previousImage) && value.equals(ValidationUtils.trimToNull(previousImage)));
     }
 
     private boolean isLocalImage(String value) {

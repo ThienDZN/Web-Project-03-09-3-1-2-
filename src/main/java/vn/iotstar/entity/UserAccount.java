@@ -23,7 +23,7 @@ public class UserAccount implements Serializable {
     @Column(name = "UserId")
     private Long userId;
 
-    @Column(name = "FullName", columnDefinition = "nvarchar(120) not null")
+    @Column(name = "FullName", length = 120, nullable = false)
     private String fullName;
 
     @Column(name = "Username", length = 50, nullable = false, unique = true)
@@ -38,7 +38,7 @@ public class UserAccount implements Serializable {
     @Column(name = "Phone", length = 20)
     private String phone;
 
-    @Column(name = "Images", columnDefinition = "nvarchar(500)")
+    @Column(name = "Images", length = 500)
     private String images;
 
     @Column(name = "RoleName", length = 20, nullable = false)

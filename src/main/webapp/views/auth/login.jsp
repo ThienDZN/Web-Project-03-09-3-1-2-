@@ -18,11 +18,19 @@
         <form method="post" action="<c:url value='/login'/>">
             <div class="form-group">
                 <label>Username or Email</label>
-                <input class="form-input" type="text" name="usernameOrEmail" value="${param.usernameOrEmail}" placeholder="admin or email@example.com">
+                <input class="form-input${not empty errors.usernameOrEmail ? ' is-invalid' : ''}" type="text" name="usernameOrEmail"
+                       value="<c:out value='${not empty formData.usernameOrEmail ? formData.usernameOrEmail : param.usernameOrEmail}'/>"
+                       placeholder="admin or email@example.com">
+                <c:if test="${not empty errors.usernameOrEmail}">
+                    <div class="invalid-feedback d-block">${errors.usernameOrEmail}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input class="form-input" type="password" name="password" placeholder="Enter your password">
+                <input class="form-input${not empty errors.password ? ' is-invalid' : ''}" type="password" name="password" placeholder="Enter your password">
+                <c:if test="${not empty errors.password}">
+                    <div class="invalid-feedback d-block">${errors.password}</div>
+                </c:if>
             </div>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit">Login</button>
@@ -33,7 +41,7 @@
             <a class="btn btn-secondary" href="<c:url value='/register'/>">Create Account</a>
             <a class="btn btn-secondary" href="<c:url value='/forgot-password'/>">Forgot Password</a>
         </div>
-        <p class="inline-note">Demo profile user: <strong>user123</strong> / <strong>User123@Aa1</strong></p>
+        <p class="inline-note">Demo profile user: <strong>thien</strong> / <strong>User123@Aa1</strong></p>
     </div>
 </div>
 </body>

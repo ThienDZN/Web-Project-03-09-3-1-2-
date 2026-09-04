@@ -18,6 +18,8 @@ import vn.iotstar.entity.UserAccount;
 import vn.iotstar.service.IUserProfileService;
 import vn.iotstar.service.impl.UserProfileServiceImpl;
 import vn.iotstar.util.LocalImageStorage;
+import vn.iotstar.validation.ValidationErrors;
+import vn.iotstar.validation.ValidationUtils;
 
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024,
@@ -50,6 +52,15 @@ public class ProfileController extends HttpServlet {
         }
 
         UserAccount persistedUser = userProfileService.findById(currentUser.getUserId());
+        ValidationErrors errors = validateProfileInput(req);
+        req.setAttribute("errors", errors.asMap());
+        if (errors.hasErrors()) {
+            req.setAttribute("profileUser", persistedUser);
+            bindSubmittedForm(req);
+            req.getRequestDispatcher("/views/user/profile.jsp").forward(req, resp);
+            return;
+        }
+
         String uploadedImage = null;
         try {
             Part imagePart = req.getPart("imageFile");
@@ -60,8 +71,8 @@ public class ProfileController extends HttpServlet {
             }
 
             UserProfileUpdateRequest updateRequest = new UserProfileUpdateRequest();
-            updateRequest.setFullName(req.getParameter("fullName"));
-            updateRequest.setPhone(req.getParameter("phone"));
+            updateRequest.setFullName(ValidationUtils.trimToNull(req.getParameter("fullName")));
+            updateRequest.setPhone(ValidationUtils.trimToNull(req.getParameter("phone")));
             updateRequest.setImage(nextImage);
 
             UserAccount updatedUser = userProfileService.updateProfile(persistedUser.getUserId(), updateRequest);
@@ -69,12 +80,40 @@ public class ProfileController extends HttpServlet {
 
             req.getSession().setAttribute(SessionConstants.CURRENT_USER, updatedUser);
             resp.sendRedirect(req.getContextPath() + "/profile?message=" + encode("Profile updated successfully."));
+        } catch (IllegalArgumentException e) {
+            rollbackUpload(uploadedImage);
+            ValidationErrors uploadErrors = new ValidationErrors();
+            uploadErrors.add("imageFile", e.getMessage());
+            req.setAttribute("error", e.getMessage());
+            req.setAttribute("errors", uploadErrors.asMap());
+            req.setAttribute("profileUser", persistedUser);
+            bindSubmittedForm(req);
+            req.getRequestDispatcher("/views/user/profile.jsp").forward(req, resp);
         } catch (Exception e) {
             rollbackUpload(uploadedImage);
             req.setAttribute("error", e.getMessage());
-            req.setAttribute("profileUser", mergeInput(persistedUser, req));
+            req.setAttribute("profileUser", persistedUser);
+            bindSubmittedForm(req);
             req.getRequestDispatcher("/views/user/profile.jsp").forward(req, resp);
         }
+    }
+
+    private ValidationErrors validateProfileInput(HttpServletRequest req) {
+        ValidationErrors errors = new ValidationErrors();
+        String fullName = ValidationUtils.trimToNull(req.getParameter("fullName"));
+        if (fullName == null) {
+            errors.add("fullName", "Please enter your full name.");
+        } else if (ValidationUtils.exceedsLength(fullName, 120)) {
+            errors.add("fullName", "Full name must not exceed 120 characters.");
+        }
+
+        String phone = ValidationUtils.trimToNull(req.getParameter("phone"));
+        if (ValidationUtils.exceedsLength(phone, 20)) {
+            errors.add("phone", "Phone number must not exceed 20 characters.");
+        } else if (!ValidationUtils.isValidPhone(phone)) {
+            errors.add("phone", "Phone number may only contain digits, spaces, plus, dash, or parentheses.");
+        }
+        return errors;
     }
 
     private UserAccount requireCurrentUser(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -108,27 +147,20 @@ public class ProfileController extends HttpServlet {
         }
     }
 
-    private UserAccount mergeInput(UserAccount persistedUser, HttpServletRequest req) {
-        UserAccount fallback = persistedUser == null ? new UserAccount() : persistedUser;
-        fallback.setFullName(valueOrDefault(req.getParameter("fullName"), fallback.getFullName()));
-        fallback.setPhone(normalize(req.getParameter("phone")));
-        return fallback;
+    private void bindSubmittedForm(HttpServletRequest req) {
+        req.setAttribute("formFullName", submittedValue(req, "fullName"));
+        req.setAttribute("formPhone", submittedValue(req, "phone"));
+    }
+
+    private String submittedValue(HttpServletRequest req, String fieldName) {
+        if (!req.getParameterMap().containsKey(fieldName)) {
+            return null;
+        }
+        String value = ValidationUtils.trimToNull(req.getParameter(fieldName));
+        return value == null ? "" : value;
     }
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    private String valueOrDefault(String value, String defaultValue) {
-        String normalized = normalize(value);
-        return normalized == null ? defaultValue : normalized;
-    }
-
-    private String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 }

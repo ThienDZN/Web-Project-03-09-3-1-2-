@@ -27,10 +27,10 @@ public class Category implements Serializable {
     private int categoryid;
 
     @NotBlank(message = "The category name must not be empty.")
-    @Column(name = "CategoryName", columnDefinition = "nvarchar(50) not null")
+    @Column(name = "CategoryName", length = 50, nullable = false)
     private String categoryname;
 
-    @Column(name = "Images", columnDefinition = "nvarchar(500) null")
+    @Column(name = "Images", length = 500)
     private String images;
 
     @Column(name = "Status")

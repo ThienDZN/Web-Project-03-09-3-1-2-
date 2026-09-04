@@ -21,8 +21,8 @@ import vn.iotstar.entity.UserAccount;
 @WebListener
 public class AppBootstrapListener implements ServletContextListener {
     private static final int DEMO_TRACK_COUNT = 12;
-    private static final String PROFILE_DEMO_USERNAME = "user123";
-    private static final String PROFILE_DEMO_EMAIL = "user123@example.com";
+    private static final String PROFILE_DEMO_USERNAME = "thien";
+    private static final String PROFILE_DEMO_EMAIL = "thien@example.com";
     private static final String PROFILE_DEMO_PASSWORD = "User123@Aa1";
 
     private static final Set<String> TARGET_TRACK_TITLES = Set.of(
@@ -113,7 +113,7 @@ public class AppBootstrapListener implements ServletContextListener {
         UserAccount profileUser = matches.isEmpty() ? null : matches.get(0);
         if (profileUser == null) {
             profileUser = new UserAccount();
-            profileUser.setFullName("User 123");
+            profileUser.setFullName("Thien");
             profileUser.setUsername(PROFILE_DEMO_USERNAME);
             profileUser.setEmail(PROFILE_DEMO_EMAIL);
             profileUser.setRoleName("USER");
@@ -125,7 +125,7 @@ public class AppBootstrapListener implements ServletContextListener {
         }
 
         if (profileUser.getFullName() == null || profileUser.getFullName().isBlank()) {
-            profileUser.setFullName("User 123");
+            profileUser.setFullName("Thien");
         }
         if (profileUser.getEmail() == null || profileUser.getEmail().isBlank()) {
             profileUser.setEmail(PROFILE_DEMO_EMAIL);

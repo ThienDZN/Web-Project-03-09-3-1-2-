@@ -1,0 +1,65 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><sitemesh:write property="title">Assignment 03 User Profile</sitemesh:write></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+          crossorigin="anonymous">
+    <style>
+        .decorator-banner {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .decorator-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #f8ecff;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .decorator-footer {
+            color: rgba(255, 248, 255, 0.72);
+        }
+    </style>
+    <sitemesh:write property="head"/>
+</head>
+<body class="theme-music">
+<header class="decorator-banner sticky-top">
+    <div class="container py-3 py-lg-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div>
+                <div class="decorator-badge mb-2">SiteMesh Decorator 3</div>
+                <h1 class="h4 mb-1 text-white">Assignment 03 User Profile</h1>
+                <p class="mb-0 text-white-50">Bootstrap template applied through a shared decorator.</p>
+            </div>
+            <div class="text-lg-end text-white-50 small">
+                One shared layout for auth, profile, product, and admin views.
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="pb-4">
+    <sitemesh:write property="body"/>
+</main>
+
+<footer class="container pb-4 text-center decorator-footer small">
+    Assignment 03 layout is now decorated by SiteMesh with a single Bootstrap template.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
+</html>

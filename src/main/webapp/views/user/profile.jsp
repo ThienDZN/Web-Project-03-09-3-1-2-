@@ -79,29 +79,40 @@
             <form method="post" action="<c:url value='/profile'/>" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input class="form-input" type="text" name="fullName" value="${profileUser.fullName}" placeholder="Enter your full name">
+                    <input class="form-input${not empty errors.fullName ? ' is-invalid' : ''}" type="text" name="fullName"
+                           value="<c:out value='${formFullName != null ? formFullName : profileUser.fullName}'/>" placeholder="Enter your full name">
+                    <c:if test="${not empty errors.fullName}">
+                        <div class="invalid-feedback d-block">${errors.fullName}</div>
+                    </c:if>
                 </div>
 
                 <div class="form-group">
                     <label>Phone</label>
-                    <input class="form-input" type="text" name="phone" value="${profileUser.phone}" placeholder="Enter your phone number">
+                    <input class="form-input${not empty errors.phone ? ' is-invalid' : ''}" type="text" name="phone"
+                           value="<c:out value='${formPhone != null ? formPhone : profileUser.phone}'/>" placeholder="Enter your phone number">
                     <div class="field-hint">You can leave this field empty if you do not want to show a phone number yet.</div>
+                    <c:if test="${not empty errors.phone}">
+                        <div class="invalid-feedback d-block">${errors.phone}</div>
+                    </c:if>
                 </div>
 
                 <div class="form-group">
                     <label>Username</label>
-                    <input class="form-input" type="text" value="${profileUser.username}" readonly>
+                    <input class="form-input" type="text" value="<c:out value='${profileUser.username}'/>" readonly>
                 </div>
 
                 <div class="form-group">
                     <label>Email</label>
-                    <input class="form-input" type="text" value="${profileUser.email}" readonly>
+                    <input class="form-input" type="text" value="<c:out value='${profileUser.email}'/>" readonly>
                 </div>
 
                 <div class="form-group">
                     <label>Profile Image</label>
-                    <input class="form-file" type="file" name="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,image/*">
+                    <input class="form-file${not empty errors.imageFile ? ' is-invalid' : ''}" type="file" name="imageFile" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,image/*">
                     <div class="field-hint">If you do not choose a new file, the current profile image will be kept.</div>
+                    <c:if test="${not empty errors.imageFile}">
+                        <div class="invalid-feedback d-block">${errors.imageFile}</div>
+                    </c:if>
                 </div>
 
                 <div class="form-actions">

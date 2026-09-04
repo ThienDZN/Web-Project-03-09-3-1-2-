@@ -17,23 +17,41 @@
         <form method="post" action="<c:url value='/register'/>">
             <div class="form-group">
                 <label>Full Name</label>
-                <input class="form-input" type="text" name="fullName" value="${param.fullName}" placeholder="Your full name">
+                <input class="form-input${not empty errors.fullName ? ' is-invalid' : ''}" type="text" name="fullName"
+                       value="<c:out value='${not empty formData.fullName ? formData.fullName : param.fullName}'/>" placeholder="Your full name">
+                <c:if test="${not empty errors.fullName}">
+                    <div class="invalid-feedback d-block">${errors.fullName}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Username</label>
-                <input class="form-input" type="text" name="username" value="${param.username}" placeholder="your username">
+                <input class="form-input${not empty errors.username ? ' is-invalid' : ''}" type="text" name="username"
+                       value="<c:out value='${not empty formData.username ? formData.username : param.username}'/>" placeholder="your username">
+                <c:if test="${not empty errors.username}">
+                    <div class="invalid-feedback d-block">${errors.username}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Email</label>
-                <input class="form-input" type="email" name="email" value="${param.email}" placeholder="email@example.com">
+                <input class="form-input${not empty errors.email ? ' is-invalid' : ''}" type="email" name="email"
+                       value="<c:out value='${not empty formData.email ? formData.email : param.email}'/>" placeholder="email@example.com">
+                <c:if test="${not empty errors.email}">
+                    <div class="invalid-feedback d-block">${errors.email}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input class="form-input" type="password" name="password" placeholder="At least 6 characters">
+                <input class="form-input${not empty errors.password ? ' is-invalid' : ''}" type="password" name="password" placeholder="At least 6 characters">
+                <c:if test="${not empty errors.password}">
+                    <div class="invalid-feedback d-block">${errors.password}</div>
+                </c:if>
             </div>
             <div class="form-group">
                 <label>Confirm Password</label>
-                <input class="form-input" type="password" name="confirmPassword" placeholder="Retype password">
+                <input class="form-input${not empty errors.confirmPassword ? ' is-invalid' : ''}" type="password" name="confirmPassword" placeholder="Retype password">
+                <c:if test="${not empty errors.confirmPassword}">
+                    <div class="invalid-feedback d-block">${errors.confirmPassword}</div>
+                </c:if>
             </div>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit">Register and Send OTP</button>

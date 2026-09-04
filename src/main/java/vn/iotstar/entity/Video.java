@@ -23,13 +23,13 @@ public class Video implements Serializable {
     @Column(name = "Active")
     private int active;
 
-    @Column(name = "Description", columnDefinition = "nvarchar(500) null")
+    @Column(name = "Description", length = 500)
     private String description;
 
-    @Column(name = "Poster", columnDefinition = "nvarchar(500) null")
+    @Column(name = "Poster", length = 500)
     private String poster;
 
-    @Column(name = "Title", columnDefinition = "nvarchar(500) null")
+    @Column(name = "Title", length = 500)
     private String title;
 
     @Column(name = "Views")
